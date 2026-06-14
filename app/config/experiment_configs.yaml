@@ -1,0 +1,25 @@
+configs:
+
+  dense_minilm:
+
+    chunk_size: 1000
+
+    chunk_overlap: 200
+
+    embedding_model: sentence-transformers/all-MiniLM-L6-v2
+
+    retrieval_type: dense
+
+    top_k: 3
+
+  dense_e5:
+
+    chunk_size: 1000
+
+    chunk_overlap: 200
+
+    embedding_model: intfloat/e5-large-v2
+
+    retrieval_type: dense
+
+    top_k: 3

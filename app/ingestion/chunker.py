@@ -23,12 +23,16 @@ def load_pdf_text(pdf_path):
     return text
 
 
-def create_chunks(text):
+def create_chunks(
+    text,
+    chunk_size,
+    chunk_overlap
+):
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
-        length_function=len
+    chunk_size=chunk_size,
+    chunk_overlap=chunk_overlap,
+    length_function=len
     )
 
     chunks = splitter.split_text(text)

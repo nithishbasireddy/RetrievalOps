@@ -29,9 +29,10 @@ def read_docx(file_path):
 
 
 def load_documents():
+
     files = list(DOCUMENTS_PATH.glob("*"))
 
-    print(f"\nFound {len(files)} documents\n")
+    documents = []
 
     for file in files:
 
@@ -44,11 +45,14 @@ def load_documents():
         else:
             continue
 
-        print("=" * 50)
-        print(file.name)
-        print(f"Characters: {len(text)}")
-        print(text[:300])
-        print("\n")
+        documents.append(
+            {
+                "filename": file.name,
+                "text": text
+            }
+        )
+
+    return documents
 
 
 if __name__ == "__main__":
