@@ -1,9 +1,11 @@
 from app.benchmark.dataset_loader import (
     load_benchmark_dataset
 )
+
 from app.pipeline.pipeline_runner import (
     build_pipeline
 )
+
 from app.pipeline.query_runner import (
     run_query
 )
@@ -17,7 +19,9 @@ def main():
         f"\nRunning {len(dataset)} benchmark questions\n"
     )
 
-    pipeline = build_pipeline("dense_minilm")
+    pipeline = build_pipeline(
+        "dense_minilm"
+    )
 
     for item in dataset:
 
