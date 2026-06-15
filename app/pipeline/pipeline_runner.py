@@ -1,6 +1,3 @@
-import shutil
-from pathlib import Path
-
 from app.pipeline.builder import (
     build_pipeline as build_pipeline_config
 )
@@ -36,15 +33,12 @@ def run_pipeline(config_name, query):
         config["embedding_model"]
     )
 
-    store_path = Path("data/vectorstores/temp_store")
-
-    if store_path.exists():
-        shutil.rmtree(store_path)
+    
 
     vectorstore = create_vectorstore(
         chunks=all_chunks,
         embeddings=embeddings,
-        persist_directory="data/vectorstores/temp_store"
+        persist_directory=f"data/vectorstores/{config_name}"
     )
 
     results = retrieve(
@@ -79,15 +73,10 @@ def build_pipeline(config_name):
         config["embedding_model"]
     )
 
-    store_path = Path("data/vectorstores/temp_store")
-
-    if store_path.exists():
-        shutil.rmtree(store_path)
-
     vectorstore = create_vectorstore(
         chunks=all_chunks,
         embeddings=embeddings,
-        persist_directory="data/vectorstores/temp_store"
+        persist_directory=f"data/vectorstores/{config_name}"
     )
 
     return {

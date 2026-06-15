@@ -1,14 +1,17 @@
 from app.benchmark.dataset_loader import (
     load_benchmark_dataset
 )
-
 from app.pipeline.pipeline_runner import (
     build_pipeline
 )
-
 from app.pipeline.query_runner import (
     run_query
 )
+
+CONFIGS = [
+    "dense_minilm",
+    "dense_e5"
+]
 
 
 def main():
@@ -19,32 +22,45 @@ def main():
         f"\nRunning {len(dataset)} benchmark questions\n"
     )
 
-    pipeline = build_pipeline(
-        "dense_minilm"
-    )
+    pipelines = {}
+
+    for config_name in CONFIGS:
+
+        print(f"\nRunning: {config_name}")
+
+        pipeline = build_pipeline(
+            config_name
+        )
+
+        pipelines[config_name] = pipeline
 
     for item in dataset:
 
         question = item["question"]
 
-        print("=" * 70)
+        for config_name in CONFIGS:
 
-        print(f"Question {item['id']}")
-        print(question)
+            pipeline = pipelines[config_name]
 
-        results = run_query(
-            vectorstore=pipeline["vectorstore"],
-            query=question,
-            top_k=pipeline["config"]["top_k"]
-        )
+            results = run_query(
+                vectorstore=pipeline["vectorstore"],
+                query=question,
+                top_k=pipeline["config"]["top_k"]
+            )
 
-        print("\nTop Result:\n")
+            config_label = "MiniLM" if "minilm" in config_name else "E5"
 
-        print(
-            results[0].page_content[:300]
-        )
+            print("=" * 70)
+            print(f"Question {item['id']}")
+            print(question)
 
-        print("\n")
+            print(f"\n{config_label} Result:\n")
+
+            print(
+                results[0].page_content[:300]
+            )
+
+            print("\n")
 
 
 if __name__ == "__main__":
