@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "question": "What are the responsibilities of the contractor?"
+  },
+  {
+    "id": 2,
+    "question": "Under what circumstances can confidential information be disclosed?"
+  },
+  {
+    "id": 3,
+    "question": "What obligations does an employee have regarding confidential information?"
+  },
+  {
+    "id": 4,
+    "question": "What happens if either party breaches the agreement?"
+  },
+  {
+    "id": 5,
+    "question": "How is termination of employment handled?"
+  },
+  {
+    "id": 6,
+    "question": "Who owns intellectual property created during employment?"
+  },
+  {
+    "id": 7,
+    "question": "What labour law obligations must the service provider follow?"
+  },
+  {
+    "id": 8,
+    "question": "What records must the service provider maintain?"
+  },
+  {
+    "id": 9,
+    "question": "How long do confidentiality obligations remain in effect?"
+  },
+  {
+    "id": 10,
+    "question": "What restrictions exist on sharing proprietary information?"
+  }
+]
