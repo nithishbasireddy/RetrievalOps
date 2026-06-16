@@ -6,7 +6,7 @@ DATASET_PATH = (
     Path(__file__).resolve().parent.parent.parent
     / "data"
     / "benchmark_dataset"
-    / "legal_benchmark_v1.json"
+    / "legal_benchmark_gold.json"
 )
 
 
@@ -26,4 +26,4 @@ if __name__ == "__main__":
     print(
         f"Questions Loaded: "
         f"{len(dataset)}"
-    )
+    )

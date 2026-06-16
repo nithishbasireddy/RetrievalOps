@@ -1,0 +1,52 @@
+[
+    {
+        "id": 1,
+        "question": "What are the responsibilities of the contractor?",
+        "reference_answer": "The service provider is responsible for maintaining and safeguarding the mess premises, equipment, furniture, utensils, and other assets supplied by the institute. The contractor must ensure proper upkeep of the establishment, prevent misuse or careless handling by workers, and coordinate with the hostel administration to maintain the facilities in good condition."
+    },
+    {
+        "id": 2,
+        "question": "Under what circumstances can confidential information be disclosed?",
+        "reference_answer": "Confidential information may be disclosed when required by law, regulation, court order, or legal process, provided the receiving party gives prompt notice to the disclosing party whenever practicable. Disclosure is also permitted when the information is already public, was previously known without restriction, was independently developed, or has been authorized for release in writing by the disclosing party."
+    },
+    {
+        "id": 3,
+        "question": "What obligations does an employee have regarding confidential information?",
+        "reference_answer": "The employee must keep confidential information strictly confidential, exercise reasonable care to prevent unauthorized disclosure, and use it only for performing duties for the company. The employee may not reproduce, distribute, or commercially use such information and must return all confidential materials upon request or termination of employment."
+    },
+    {
+        "id": 4,
+        "question": "What happens if either party breaches the agreement?",
+        "reference_answer": "A party that breaches the confidentiality agreement may be required to indemnify the non-breaching party for damages, costs, litigation expenses, and reasonable attorney fees. The non-breaching party may also seek injunctive relief, specific performance, or other legal remedies available under applicable law."
+    },
+    {
+        "id": 5,
+        "question": "How is termination of employment handled?",
+        "reference_answer": "Employment may be terminated during the probation period at the employer's discretion without notice. After probation, the employer may terminate employment by providing notice or compensation in lieu of notice, while the employee may resign by giving the required advance notice. Employment may also end due to cause, disability, or death as specified in the agreement."
+    },
+    {
+        "id": 6,
+        "question": "Who owns intellectual property created during employment?",
+        "reference_answer": "The employer owns intellectual property, inventions, designs, source code, software, and other work products created by the employee during the course of employment. The employee assigns all rights, title, and interest in such intellectual property to the employer and may not claim ownership after termination."
+    },
+    {
+        "id": 7,
+        "question": "What labour law obligations must the service provider follow?",
+        "reference_answer": "The service provider must comply with all applicable labour laws, including minimum wage requirements, equal pay provisions, ESI, EPF, gratuity, contract labour regulations, and industrial laws. The contractor is responsible for maintaining compliance records and indemnifying the institute against violations of labour legislation."
+    },
+    {
+        "id": 8,
+        "question": "What records must the service provider maintain?",
+        "reference_answer": "The service provider must maintain all records required under applicable labour and statutory enactments, including wage, employment, ESI, EPF, and contract labour records. These records must be available for inspection by authorized representatives of the institute whenever required."
+    },
+    {
+        "id": 9,
+        "question": "How long do confidentiality obligations remain in effect?",
+        "reference_answer": "The confidentiality agreement remains effective until the proposed transaction is terminated. However, confidentiality obligations survive termination or expiration of the agreement and continue for five years after the agreement ends, unless otherwise specified in a subsequent binding agreement."
+    },
+    {
+        "id": 10,
+        "question": "What restrictions exist on sharing proprietary information?",
+        "reference_answer": "Confidential or proprietary information may not be disclosed, copied, reproduced, summarized, distributed, or used for purposes other than the intended business relationship without authorization. Disclosure is limited to authorized personnel on a need-to-know basis and must be protected using reasonable confidentiality safeguards."
+    }
+]
