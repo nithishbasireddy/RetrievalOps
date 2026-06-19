@@ -41,4 +41,4 @@ for i, result in enumerate(results, start=1):
 
     print(f"Result {i}")
 
-    print(result.page_content[:500])
+    print(result[:500])

@@ -1,3 +1,5 @@
+import re
+
 from rank_bm25 import BM25Okapi
 
 
@@ -8,7 +10,7 @@ class BM25Retriever:
         self.chunks = chunks
 
         tokenized_chunks = [
-            chunk.split()
+            self.preprocess(chunk)
             for chunk in chunks
         ]
 
@@ -16,13 +18,27 @@ class BM25Retriever:
             tokenized_chunks
         )
 
+    def preprocess(self, text):
+
+        text = text.lower()
+
+        text = re.sub(
+            r"[^a-z0-9\s]",
+            " ",
+            text
+        )
+
+        return text.split()
+
     def retrieve(
         self,
         query,
         k=3
     ):
 
-        tokenized_query = query.split()
+        tokenized_query = self.preprocess(
+            query
+        )
 
         scores = self.bm25.get_scores(
             tokenized_query
