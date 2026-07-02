@@ -12,3 +12,14 @@ def create_vectorstore(
         embedding=embeddings,
         persist_directory=persist_directory
     )
+
+
+def load_vectorstore(
+    embeddings,
+    persist_directory
+):
+
+    return Chroma(
+        persist_directory=persist_directory,
+        embedding_function=embeddings
+    )
