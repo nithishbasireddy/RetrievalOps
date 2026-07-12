@@ -34,7 +34,8 @@ def run_query(
     results = retrieve(
         vectorstore=vectorstore,
         query=query,
-        k=config["top_k"]
+        k=config["top_k"],
+        retrieval_type=config.get("retrieval_type", "dense")
     )
 
     return results

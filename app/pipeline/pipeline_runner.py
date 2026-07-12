@@ -23,7 +23,8 @@ def run_pipeline(config_name, query):
         chunks = create_chunks(
             document["text"],
             chunk_size=config["chunk_size"],
-            chunk_overlap=config["chunk_overlap"]
+            chunk_overlap=config["chunk_overlap"],
+            filename=document["filename"]
         )
 
         all_chunks.extend(chunks)
@@ -44,7 +45,8 @@ def run_pipeline(config_name, query):
     results = retrieve(
         vectorstore=vectorstore,
         query=query,
-        k=config["top_k"]
+        k=config["top_k"],
+        retrieval_type=config.get("retrieval_type", "dense")
     )
 
     return results
@@ -64,7 +66,8 @@ def build_pipeline(config_name):
         chunks = create_chunks(
             document["text"],
             chunk_size=config["chunk_size"],
-            chunk_overlap=config["chunk_overlap"]
+            chunk_overlap=config["chunk_overlap"],
+            filename=document["filename"]
         )
 
         all_chunks.extend(chunks)

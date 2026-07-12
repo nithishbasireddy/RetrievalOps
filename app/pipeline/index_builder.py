@@ -22,7 +22,8 @@ def build_index(config_name):
         chunks = create_chunks(
             document["text"],
             chunk_size=config["chunk_size"],
-            chunk_overlap=config["chunk_overlap"]
+            chunk_overlap=config["chunk_overlap"],
+            filename=document["filename"]
         )
 
         all_chunks.extend(chunks)

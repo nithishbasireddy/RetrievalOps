@@ -14,7 +14,7 @@ class HybridRetriever:
         self.bm25_results = bm25_results
         self.k = k
 
-    def retrieve(self):
+    def retrieve(self, final_k=5):
 
         scores = defaultdict(float)
 
@@ -25,20 +25,24 @@ class HybridRetriever:
             start=1
         ):
 
-            text = doc.page_content
+            chunk_id = doc.metadata["chunk_id"]
 
-            documents[text] = doc
+            documents[chunk_id] = doc
 
-            scores[text] += 1 / (
+            scores[chunk_id] += 1 / (
                 self.k + rank
             )
 
-        for rank, text in enumerate(
+        for rank, doc in enumerate(
             self.bm25_results,
             start=1
         ):
 
-            scores[text] += 1 / (
+            chunk_id = doc.metadata["chunk_id"]
+
+            documents[chunk_id] = doc
+
+            scores[chunk_id] += 1 / (
                 self.k + rank
             )
 
@@ -50,12 +54,12 @@ class HybridRetriever:
 
         results = []
 
-        for text, _ in ranked:
+        for chunk_id, _ in ranked[:final_k]:
 
-            if text in documents:
+            if chunk_id in documents:
 
                 results.append(
-                    documents[text]
+                    documents[chunk_id]
                 )
 
         return results

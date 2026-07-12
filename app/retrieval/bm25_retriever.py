@@ -1,6 +1,7 @@
 import re
 
 from rank_bm25 import BM25Okapi
+from langchain_core.documents import Document
 
 
 class BM25Retriever:
@@ -10,7 +11,7 @@ class BM25Retriever:
         self.chunks = chunks
 
         tokenized_chunks = [
-            self.preprocess(chunk)
+            self.preprocess(chunk["text"])
             for chunk in chunks
         ]
 
@@ -53,9 +54,16 @@ class BM25Retriever:
         results = []
 
         for idx in ranked_indices[:k]:
-
+            chunk = self.chunks[idx]
             results.append(
-                self.chunks[idx]
+                Document(
+                    page_content=chunk["text"],
+                    metadata={
+                        "chunk_id": chunk["chunk_id"],
+                        "document": chunk["document"],
+                        "chunk_index": chunk["chunk_index"]
+                    }
+                )
             )
 
         return results
