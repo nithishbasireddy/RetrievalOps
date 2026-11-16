@@ -72,3 +72,17 @@ def test_fixed_choice_baselines():
     df = fixed_choice_baselines({"x": oracle(M1, names), "y": oracle(M2, names)})
     assert set(df.corpus) == {"x", "y"}
     assert (df.regret_global_best > 0).any()
+
+
+def test_equivalent_labels_interpolates():
+    import pandas as pd
+
+    from retrievalops.analysis.selection import equivalent_labels
+
+    curve = pd.DataFrame({"n_labels": [1, 10, 100], "mean_regret": [0.10, 0.05, 0.01]})
+    assert equivalent_labels(curve, 0.2) == 1
+    assert equivalent_labels(curve, 0.05) == 10
+    assert equivalent_labels(curve, 0.0) == float("inf")
+    mid = equivalent_labels(curve, 0.03)
+    assert 10 < mid < 100
+    assert mid == pytest.approx(10 ** 1.5)  # halfway in regret -> geometric midpoint in n

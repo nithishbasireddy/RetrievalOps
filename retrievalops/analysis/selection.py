@@ -131,7 +131,7 @@ def evaluate_scores(scores: np.ndarray, orc: OracleRanking) -> dict[str, float]:
 def label_budget_curve(
     M: np.ndarray,
     orc: OracleRanking,
-    budgets: Sequence[int] = (5, 10, 20, 50, 100, 200, 500),
+    budgets: Sequence[int] = (1, 2, 3, 5, 7, 10, 15, 20, 30, 50, 75, 100, 150, 200, 300, 500),
     reps: int = 1000,
     seed: int = 0,
 ) -> pd.DataFrame:
@@ -179,3 +179,24 @@ def fixed_choice_baselines(orcs: dict[str, OracleRanking]) -> pd.DataFrame:
         rows.append({"corpus": name, "global_best": configs[g], "regret_global_best": o.regret(g),
                      "oracle": configs[o.best], "n_tied": int(o.tie.sum())})
     return pd.DataFrame(rows)
+
+
+def equivalent_labels(curve: pd.DataFrame, regret: float) -> float:
+    """Number of labelled queries whose expected regret equals ``regret`` (log-linear interpolation).
+
+    ``curve`` is one corpus' label_budget_curve. If the selector is no better than the smallest
+    budget, that budget is returned (an upper bound); if it beats the largest budget, +inf.
+    """
+    c = curve.sort_values("n_labels")
+    n = c.n_labels.to_numpy(dtype=float)
+    r = np.minimum.accumulate(c.mean_regret.to_numpy(dtype=float))  # enforce monotone decrease
+    if regret >= r[0]:
+        return float(n[0])
+    if regret < r[-1]:
+        return float("inf")
+    i = int(np.argmax(r <= regret))  # first budget at least as good as the selector
+    if r[i] == regret or i == 0:
+        return float(n[i])
+    # interpolate in log(n) between budgets i-1 and i
+    t = (r[i - 1] - regret) / (r[i - 1] - r[i])
+    return float(np.exp(np.log(n[i - 1]) + t * (np.log(n[i]) - np.log(n[i - 1]))))
