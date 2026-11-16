@@ -119,3 +119,35 @@ def all_k_metrics(
         for name, v in span_metrics(retrieved, gold, k, n_relevant).items():
             out[f"{name}@{k}"] = v
     return out
+
+
+def truncate_to_budget(retrieved: Sequence[Span], budget: int) -> list[Span]:
+    """Take ranked chunks until ``budget`` characters are used; the last chunk is cut to fit.
+
+    This compares configurations with different chunk sizes at equal context length (the
+    quantity an LLM actually consumes), unlike metrics at a fixed number of chunks k.
+    """
+    out: list[Span] = []
+    used = 0
+    for s in retrieved:
+        if used >= budget:
+            break
+        take = min(s.end - s.start, budget - used)
+        out.append(Span(s.doc_id, s.start, s.start + take))
+        used += take
+    return out
+
+
+def budget_metrics(retrieved: Sequence[Span], gold: Sequence[Span], budgets: Sequence[int]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    gold_iv = _by_doc(gold)
+    gold_len = sum(e - s for ivs in gold_iv.values() for s, e in ivs)
+    for b in budgets:
+        top = truncate_to_budget(retrieved, b)
+        ret_iv = _by_doc(top)
+        ret_len = sum(e - s for ivs in ret_iv.values() for s, e in ivs)
+        inter = sum(_intersection_len(ret_iv[d], gold_iv[d]) for d in ret_iv if d in gold_iv)
+        out[f"recall@{b}c"] = inter / gold_len if gold_len else 0.0
+        out[f"precision@{b}c"] = inter / ret_len if ret_len else 0.0
+        out[f"used_chars@{b}c"] = float(sum(s.end - s.start for s in top))
+    return out
