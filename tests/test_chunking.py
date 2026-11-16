@@ -63,3 +63,20 @@ def test_empty_and_whitespace_documents():
 def test_invalid_overlap_rejected():
     with pytest.raises(ValueError):
         ChunkingConfig(chunk_size=100, chunk_overlap=100)
+
+
+def test_synthetic_passage_sampler_returns_clean_spans():
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "make_synthetic", Path(__file__).resolve().parent.parent / "scripts" / "make_synthetic.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    text = " ".join(f"This is sentence number {i} of the agreement." for i in range(400))
+    rng = random.Random(0)
+    for _ in range(50):
+        s, e = mod.sample_passage(text, rng)
+        assert 240 <= e - s <= 950
+        assert text[e - 1] == "." and not text[s].isspace()
+    assert mod.clean_question('Question: "What is X?"\nextra') == "What is X?"

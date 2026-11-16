@@ -75,6 +75,21 @@ def load_legalbench_rag(cfg: DatasetConfig) -> Dataset:
             queries.append(Query(qid=f"{subset}/{i}", text=t["query"], gold_spans=spans, subset=subset))
 
     corpus_files = referenced_used if cfg.sampling == "lbr_mini" else referenced_all
+    if cfg.query_file:
+        # replace the queries (e.g. synthetic ones) but keep the official corpus unchanged
+        if cfg.sampling == "lbr_mini":
+            raise ValueError("query_file cannot be combined with sampling: lbr_mini")
+        with open(Path(cfg.query_file).expanduser()) as f:
+            tests = json.load(f)["tests"]
+        queries = []
+        for t in tests:
+            if t["subset"] not in subsets:
+                continue
+            spans = [Span(_nfc(s["file_path"]), int(s["span"][0]), int(s["span"][1])) for s in t["snippets"]]
+            missing = {s.doc_id for s in spans} - corpus_files
+            if missing:
+                raise ValueError(f"query {t['qid']} references files outside the corpus: {sorted(missing)[:2]}")
+            queries.append(Query(qid=t["qid"], text=t["query"], gold_spans=spans, subset=t["subset"]))
     documents = []
     for doc_id in sorted(corpus_files):
         path = root / "corpus" / doc_id

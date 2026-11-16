@@ -61,6 +61,7 @@ class DatasetConfig(_Strict):
     sampling: Literal["none", "random", "lbr_mini"] = "none"
     max_queries_per_subset: int | None = None
     seed: int = 0
+    query_file: str | None = None  # legalbench_rag: replace queries, keep the official corpus
 
 
 class GenerationConfig(_Strict):

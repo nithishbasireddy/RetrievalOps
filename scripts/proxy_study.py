@@ -54,6 +54,8 @@ def main() -> None:
     ap.add_argument("--judge-model")
     ap.add_argument("--judge-url", default="http://127.0.0.1:8010/v1")
     ap.add_argument("--judge-tag", help="name for this judge in outputs (default: model name)")
+    ap.add_argument("--synthetic", nargs="*", default=[], metavar="LABEL=EXPERIMENT_YAML:RUN_NAME",
+                    help="finished runs of the same grid on synthetic questions, used as proxies")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     for noisy in ("httpx", "httpx2", "openai"):
@@ -86,6 +88,22 @@ def main() -> None:
         curves.append(curve)
     pd.concat(curves).to_csv(out / f"label_budget__{metric}.csv", index=False)
     fixed_choice_baselines(orcs).to_csv(out / f"fixed_choice__{metric}.csv", index=False)
+
+    # ---- synthetic-question runs ----------------------------------------------------------------
+    synth: dict[str, pd.DataFrame] = {}
+    for spec in args.synthetic:
+        label, rest = spec.split("=", 1)
+        s_yaml, s_run = rest.rsplit(":", 1)
+        s_exp = load_experiment(s_yaml)
+        s_dir = Path(s_exp.output_dir) / s_run
+        s_cache = s_dir / "analysis" / "per_query_metrics.csv"
+        if s_cache.exists():
+            synth[label] = pd.read_csv(s_cache)
+        else:
+            s_cache.parent.mkdir(parents=True, exist_ok=True)
+            synth[label] = load_per_query(s_dir, load_dataset(s_exp.dataset))
+            synth[label].to_csv(s_cache, index=False)
+        log.info("Synthetic proxy %s: %d rows from %s", label, len(synth[label]), s_dir)
 
     # ---- label-free proxies on samples of unlabelled queries ----------------------------------
     queries = {q.qid: q for q in ds.queries}
@@ -122,6 +140,13 @@ def main() -> None:
                                  **evaluate_scores(scores, orc)})
 
                 record("consensus", P.consensus_scores(trunc_all, qids))
+                for label, sdf in synth.items():
+                    S, s_configs, s_cols = matrix(sdf, metric, corpus)
+                    if s_configs != orc.configs:
+                        raise ValueError(f"synthetic run {label} has a different config list")
+                    s_order = random.Random(f"{seed}/{corpus}/synth").sample(range(len(s_cols)), len(s_cols))
+                    take = s_order[: min(n_q, len(s_cols))]
+                    record(f"synthetic[{label}]", {c: S[i, take] for i, c in enumerate(s_configs)})
                 for mode, rel in rels_all.items():
                     prec, rec = P.judged_scores(trunc_all, full_all, qids, rel)
                     record(f"judge_precision[{judge_tag},{mode}]", prec)
