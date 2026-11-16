@@ -1,0 +1,31 @@
+# Baselines on LegalBench-RAG-mini (776 queries = 194 x 4 subsets, reference sampling protocol).
+# Chunking 500/0 matches the strongest configuration reported in the LegalBench-RAG paper (RCTS).
+dataset:
+  name: legalbench_rag
+  path: ../datasets/legalbenchrag
+  sampling: lbr_mini
+eval_ks: [1, 2, 4, 8, 16, 32, 64]
+output_dir: results
+
+base:
+  chunking: {strategy: recursive, chunk_size: 500, chunk_overlap: 0}
+  top_k: 64
+  candidate_k: 100
+
+configs:
+  bm25:            {retriever: bm25}
+  dense_minilm:    {retriever: dense, embedding_model: sentence-transformers/all-MiniLM-L6-v2}
+  dense_e5:        {retriever: dense, embedding_model: intfloat/e5-large-v2}
+  dense_bge:       {retriever: dense, embedding_model: BAAI/bge-large-en-v1.5}
+  dense_bge_m3:    {retriever: dense, embedding_model: BAAI/bge-m3}
+  dense_qwen3:     {retriever: dense, embedding_model: Qwen/Qwen3-Embedding-0.6B}
+  hybrid_e5:       {retriever: hybrid, embedding_model: intfloat/e5-large-v2}
+  hybrid_qwen3:    {retriever: hybrid, embedding_model: Qwen/Qwen3-Embedding-0.6B}
+  hybrid_e5_rerank:
+    retriever: hybrid
+    embedding_model: intfloat/e5-large-v2
+    reranker: BAAI/bge-reranker-v2-m3
+  naive_fixed_e5:
+    retriever: dense
+    embedding_model: intfloat/e5-large-v2
+    chunking: {strategy: fixed, chunk_size: 500, chunk_overlap: 0}

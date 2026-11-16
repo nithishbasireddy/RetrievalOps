@@ -1,0 +1,26 @@
+# The six configurations from the original app/config/experiment_configs.yaml, on the original
+# 5-contract corpus. This set has no gold evidence spans, so it produces rankings (and answers,
+# if `generation` is enabled) but no retrieval metrics.
+dataset: {name: local_legal, path: data}
+eval_ks: [1, 3]
+output_dir: results
+
+base:
+  chunking: {strategy: recursive, chunk_size: 1000, chunk_overlap: 200}
+  top_k: 3
+  candidate_k: 50
+
+configs:
+  dense_minilm:  {retriever: dense,  embedding_model: sentence-transformers/all-MiniLM-L6-v2}
+  dense_e5:      {retriever: dense,  embedding_model: intfloat/e5-large-v2}
+  bm25:          {retriever: bm25}
+  hybrid_minilm: {retriever: hybrid, embedding_model: sentence-transformers/all-MiniLM-L6-v2}
+  hybrid_e5:     {retriever: hybrid, embedding_model: intfloat/e5-large-v2}
+  hybrid_rerank:
+    retriever: hybrid
+    embedding_model: sentence-transformers/all-MiniLM-L6-v2
+    reranker: BAAI/bge-reranker-v2-m3
+
+# Uncomment to generate answers with a local vLLM server
+# (e.g. `vllm serve Qwen/Qwen2.5-7B-Instruct --port 8000`):
+# generation: {model: Qwen/Qwen2.5-7B-Instruct, base_url: "http://localhost:8000/v1"}

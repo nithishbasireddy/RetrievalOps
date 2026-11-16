@@ -1,1 +1,0 @@
-print("RetrievalOps setup successful")
