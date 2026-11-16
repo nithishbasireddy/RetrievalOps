@@ -56,3 +56,11 @@ def test_judge_vs_gold_perfect_judge():
     rel = {("q", Span("d", 0, 50)): 0.9, ("q", Span("d", 200, 300)): 0.1, ("q", Span("e", 0, 10)): 0.2}
     v = P.judge_vs_gold(rel, {"q": q})
     assert v["auc"] == 1.0 and v["kappa@0.5"] == 1.0
+
+
+def test_strict_vs_graded_relevance():
+    same_doc_not_answer = Judgment(0.0, 1.0, 0.0)
+    assert same_doc_not_answer.score("graded") == pytest.approx(0.5)
+    assert same_doc_not_answer.score("strict") == 0.0
+    with pytest.raises(ValueError):
+        same_doc_not_answer.score("other")

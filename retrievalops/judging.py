@@ -50,6 +50,19 @@ class Judgment:
         return (0.5 * self.p1 + self.p2) / z if z > 0 else 0.0
 
     @property
+    def p_answer(self) -> float:
+        """Strict relevance: probability that the passage contains the answer (grade 2)."""
+        z = self.p0 + self.p1 + self.p2
+        return self.p2 / z if z > 0 else 0.0
+
+    def score(self, mode: str) -> float:
+        if mode == "graded":
+            return self.relevance
+        if mode == "strict":
+            return self.p_answer
+        raise ValueError(f"unknown relevance mode {mode!r}")
+
+    @property
     def label(self) -> int:
         return max(range(3), key=lambda i: (self.p0, self.p1, self.p2)[i])
 

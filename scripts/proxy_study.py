@@ -113,11 +113,13 @@ def main() -> None:
         record("consensus", P.consensus_scores(trunc, qids))
         if judge is not None:
             pool = P.judge_pool(full, qids)
-            rel = P.run_judge(judge, pool, queries, docs, desc=f"judge {corpus}")
-            prec, rec = P.judged_scores(trunc, full, qids, rel)
-            record(f"judge_precision[{judge_tag}]", prec)
-            record(f"judge_recall[{judge_tag}]", rec)
-            validity[corpus] = P.judge_vs_gold(rel, queries)
+            rels = P.run_judge(judge, pool, queries, docs, desc=f"judge {corpus}")
+            validity[corpus] = {}
+            for mode, rel in rels.items():
+                prec, rec = P.judged_scores(trunc, full, qids, rel)
+                record(f"judge_precision[{judge_tag},{mode}]", prec)
+                record(f"judge_recall[{judge_tag},{mode}]", rec)
+                validity[corpus][mode] = P.judge_vs_gold(rel, queries)
         # reference point: the same queries *with* their gold labels
         M, configs, cols = matrix(df, metric, corpus)
         sel = [cols.index(q) for q in qids if q in cols]

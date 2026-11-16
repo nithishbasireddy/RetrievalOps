@@ -97,13 +97,15 @@ def judge_pool(full: Contexts, qids: Sequence[str]) -> dict[str, set[Span]]:
 
 
 def run_judge(judge, pool: dict[str, set[Span]], queries: dict[str, Query], docs: dict[str, Document],
-              desc: str = "judging") -> dict[tuple[str, Span], float]:
+              desc: str = "judging", modes: Sequence[str] = ("graded", "strict"),
+              ) -> dict[str, dict[tuple[str, Span], float]]:
+    """Judge every pooled chunk once; return {relevance mode: {(qid, chunk): score}}."""
     items = [(q, s) for q in pool for s in sorted(pool[q], key=lambda x: (x.doc_id, x.start))]
     from retrievalops.judging import JudgeRequest
 
     reqs = [JudgeRequest(queries[q].text, s.doc_id, docs[s.doc_id].text[s.start : s.end]) for q, s in items]
     judgments = judge.judge(reqs, desc=desc)
-    return {item: j.relevance for item, j in zip(items, judgments)}
+    return {m: {item: j.score(m) for item, j in zip(items, judgments)} for m in modes}
 
 
 def judged_scores(trunc: Contexts, full: Contexts, qids: Sequence[str], rel: dict[tuple[str, Span], float],
