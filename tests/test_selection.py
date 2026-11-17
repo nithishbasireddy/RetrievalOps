@@ -86,3 +86,21 @@ def test_equivalent_labels_interpolates():
     mid = equivalent_labels(curve, 0.03)
     assert 10 < mid < 100
     assert mid == pytest.approx(10 ** 1.5)  # halfway in regret -> geometric midpoint in n
+
+
+def test_ppi_reduces_to_label_mean_without_judge_signal_and_uses_good_judge():
+    from retrievalops.analysis.selection import assisted_selection_curve, ppi_scores
+
+    rng = np.random.default_rng(0)
+    G = rng.random((3, 10))
+    J_const = np.ones((3, 40))
+    assert np.allclose(ppi_scores(G, J_const[:, :10], J_const), G.mean(axis=1))
+
+    # a judge that is a noisy-but-unbiased copy of gold should cut regret at small n
+    true = np.array([0.50, 0.45, 0.30, 0.20])
+    G = np.clip(true[:, None] + rng.normal(0, 0.3, size=(4, 400)), 0, 1)
+    J = G + rng.normal(0, 0.05, size=G.shape)
+    o = oracle(G, list("abcd"))
+    curve = assisted_selection_curve(G, J, o, budgets=(5,), reps=300)
+    r = curve.set_index("selector").mean_regret
+    assert r["ppi"] < r["labels_only"]

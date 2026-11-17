@@ -200,3 +200,70 @@ def equivalent_labels(curve: pd.DataFrame, regret: float) -> float:
     # interpolate in log(n) between budgets i-1 and i
     t = (r[i - 1] - regret) / (r[i - 1] - r[i])
     return float(np.exp(np.log(n[i - 1]) + t * (np.log(n[i]) - np.log(n[i - 1]))))
+
+
+# ---------------------------------------------------------------------------------------------
+# Judge-assisted selection (prediction-powered inference)
+# ---------------------------------------------------------------------------------------------
+def ppi_scores(G_lab: np.ndarray, J_lab: np.ndarray, J_all: np.ndarray) -> np.ndarray:
+    """PPI++ estimate of each config's mean gold metric (Angelopoulos et al., 2023).
+
+    G_lab, J_lab: [n_configs x n] gold metric and judge proxy on the labelled queries.
+    J_all:        [n_configs x N] judge proxy on all (labelled + unlabelled) queries.
+    theta_c = lam_c * mean(J_all_c) + mean(G_lab_c - lam_c * J_lab_c), with the variance-optimal
+    lam_c = Cov(G, J) / ((1 + n/N) Var(J)). lam = 0 recovers the labels-only mean.
+    """
+    n, N = G_lab.shape[1], J_all.shape[1]
+    out = np.empty(G_lab.shape[0])
+    for c in range(G_lab.shape[0]):
+        var = J_all[c].var()
+        lam = 0.0
+        if n > 1 and var > 1e-12:
+            lam = float(np.cov(G_lab[c], J_lab[c])[0, 1] / ((1 + n / N) * var))
+        out[c] = lam * J_all[c].mean() + (G_lab[c] - lam * J_lab[c]).mean()
+    return out
+
+
+def assisted_selection_curve(
+    G: np.ndarray,
+    J: np.ndarray,
+    orc: OracleRanking,
+    budgets: Sequence[int] = (2, 3, 5, 10, 20, 50),
+    reps: int = 500,
+    seed: int = 0,
+) -> pd.DataFrame:
+    """Paired comparison on the same judged query pool (G, J: [n_configs x N]).
+
+    For each n, sample n of the N queries as labelled and pick by:
+      labels_only   mean gold metric over the n labelled queries
+      ppi           PPI++ combining those labels with the judge on all N queries
+      shortlist{k}  the judge (mean over all N) shortlists its top-k configs; labels pick among them
+    ``judge_only`` (no labels, n-independent) is reported once per n for reference.
+    """
+    rng = np.random.default_rng(seed)
+    N = G.shape[1]
+    judge_mean = J.mean(axis=1)
+    judge_rank = np.argsort(-judge_mean, kind="stable")
+    rows = []
+    j_pick = int(np.argmax(judge_mean))
+    for n in budgets:
+        if n >= N:
+            continue
+        res: dict[str, list] = {"labels_only": [], "ppi": [], "shortlist3": [], "shortlist5": [],
+                                "judge_only": [(orc.regret(j_pick), orc.tie[j_pick])]}
+        for _ in range(reps):
+            idx = rng.choice(N, size=n, replace=False)
+            lab = G[:, idx].mean(axis=1)
+            cands = {"labels_only": lab, "ppi": ppi_scores(G[:, idx], J[:, idx], J)}
+            for k in (3, 5):
+                masked = np.full_like(lab, -np.inf)
+                masked[judge_rank[:k]] = lab[judge_rank[:k]]
+                cands[f"shortlist{k}"] = masked
+            for name, s in cands.items():
+                chosen = int(rng.choice(np.flatnonzero(s == s.max())))
+                res[name].append((orc.regret(chosen), orc.tie[chosen]))
+        for name, vals in res.items():
+            arr = np.asarray(vals, dtype=float)
+            rows.append({"n_labels": n, "n_judged": N, "selector": name,
+                         "mean_regret": arr[:, 0].mean(), "p_pick_in_tie_set": arr[:, 1].mean()})
+    return pd.DataFrame(rows)

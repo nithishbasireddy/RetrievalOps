@@ -84,7 +84,9 @@ class JudgeRequest:
 class JudgmentCache:
     def __init__(self, path: str | Path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(path), check_same_thread=False)
+        # long lock timeout + WAL so several processes can share the cache safely
+        self.conn = sqlite3.connect(str(path), check_same_thread=False, timeout=600)
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.execute("CREATE TABLE IF NOT EXISTS j (key TEXT PRIMARY KEY, p0 REAL, p1 REAL, p2 REAL)")
         self.lock = threading.Lock()
 
