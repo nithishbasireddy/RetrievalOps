@@ -9,7 +9,7 @@ while tmux has-session -t budget 2>/dev/null; do sleep 60; done   # let the budg
 start() { tmux new-session -d -s "$1" "bash scripts/serve_judge.sh $2 $3 0 $4 $5 $6 2>&1 | tee /scratch/$USER/retrievalops-serve/logs/$1.log"
   for _ in $(seq 120); do curl -s 127.0.0.1:$4/v1/models >/dev/null && return 0; sleep 10; done; return 1; }
 start judge-qwen3b /scratch/$USER/Qwen2.5-3B-Instruct Qwen/Qwen2.5-3B-Instruct 8010 0.25 "" || { echo "FAILED to start 3B server" >> $S; exit 1; }
-start judge-qwen27b /scratch/$USER/Qwen3.5-27B Qwen/Qwen3.5-27B 8011 0.5 "--max-num-seqs 64 --limit-mm-per-prompt {\"image\":0,\"video\":0}" \
+start judge-qwen27b /scratch/$USER/Qwen3.5-27B Qwen/Qwen3.5-27B 8011 0.5 "--max-num-seqs 64 --limit-mm-per-prompt '{\"image\":0,\"video\":0}'" \
   || { echo "FAILED to start 27B server" >> $S; exit 1; }
 COMMON="configs/lbr_full_grid_v1.yaml --run-name lbr_full_grid_v1 --budget 4000 --n-unlabelled 25 50 100 --seeds 0 1 2 --judge-prompt v2"
 echo "running 3B v2 ($(date +%H:%M))" >> $S
