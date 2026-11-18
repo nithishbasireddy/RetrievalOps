@@ -16,6 +16,7 @@ Writes to results/<run>/analysis/:
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import logging
 import random
@@ -56,6 +57,7 @@ def main() -> None:
     ap.add_argument("--judge-url", default="http://127.0.0.1:8010/v1")
     ap.add_argument("--judge-tag", help="name for this judge in outputs (default: model name)")
     ap.add_argument("--judge-prompt", default="v1", choices=["v1", "v2"])
+    ap.add_argument("--judge-concurrency", type=int, default=64, help="parallel requests to the judge server")
     ap.add_argument("--synthetic", nargs="*", default=[], metavar="LABEL=EXPERIMENT_YAML:RUN_NAME",
                     help="finished runs of the same grid on synthetic questions, used as proxies")
     args = ap.parse_args()
@@ -115,7 +117,7 @@ def main() -> None:
         from retrievalops.judging import LLMJudge
 
         judge = LLMJudge(args.judge_model, base_url=args.judge_url, cache_path=Path(exp.cache_dir) / "judgments.sqlite",
-                         prompt=args.judge_prompt)
+                         prompt=args.judge_prompt, concurrency=args.judge_concurrency)
     judge_tag = args.judge_tag or (args.judge_model or "").rsplit("/", 1)[-1]
     if args.judge_prompt != "v1":
         judge_tag += f"+{args.judge_prompt}"
@@ -172,6 +174,9 @@ def main() -> None:
                 record("gold_labels_same_queries", {c: M[i, sel] for i, c in enumerate(configs)})
 
     prox = pd.DataFrame(rows)
+    # several studies (e.g. two judges) may run at once and merge into the same files: serialise
+    lock = open(out / ".merge.lock", "w")  # noqa: SIM115 (held across the merge below)
+    fcntl.flock(lock, fcntl.LOCK_EX)
     proxy_path = out / f"proxies__{metric}.csv"
     key = ["corpus", "proxy", "n_unlabelled", "seed"]
     if proxy_path.exists():  # merge with results of other judges / settings
@@ -203,6 +208,8 @@ def main() -> None:
             .reset_index())
     summ["equiv_labels"] = [equivalent_labels(curves_by_corpus[r.corpus], r.regret) for r in summ.itertuples()]
     summ.to_csv(out / f"proxy_summary__{metric}.csv", index=False)
+    fcntl.flock(lock, fcntl.LOCK_UN)
+    lock.close()
 
     pd.set_option("display.width", 220)
     print("\nORACLE best / #tied per corpus:")

@@ -1,0 +1,22 @@
+# Grid v2 (70 configs, same as lbr_full_grid_v2.yaml) on SYNTHETIC questions (style_matched), for the synthetic-QA proxy.
+# LegalBench-RAG corpus (one shared corpus as in the reference protocol); 400 synthetic queries.
+# 5 chunk sizes x {dense, hybrid} x 3 embedders x rerank on/off (60) + 5 x bm25 x rerank on/off (10).
+# Run with scripts/run_judge_grid_v2.sh (only the queries are synthetic; the corpus is the official one).
+dataset:
+  name: legalbench_rag
+  path: ../datasets/legalbenchrag
+  sampling: none
+  query_file: data/synthetic/lbr_synth_style_matched.json
+eval_ks: [1, 4, 16, 64]
+output_dir: results
+
+base:
+  chunking: {strategy: recursive, chunk_overlap: 0}
+  top_k: 64
+  candidate_k: 100
+
+grid:
+  chunking.chunk_size: [128, 256, 500, 1000, 2000]
+  retriever: [dense, bm25, hybrid]
+  embedding_model: [intfloat/e5-large-v2, Qwen/Qwen3-Embedding-0.6B, sentence-transformers/all-MiniLM-L6-v2]
+  reranker: [null, BAAI/bge-reranker-v2-m3]

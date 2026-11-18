@@ -54,6 +54,47 @@ evidence worth?**
 Caveat: pilot scale (10 configs, one seed). Must be re-tested on the full 30-config grid, with
 several seeds and n ∈ {25, 50, 100}.
 
+### 2026-11-17: full study v1 (30 configs, full LegalBench-RAG, recall@4000c, n ∈ {25,50,100}, 3 seeds)
+- **Strict-scored LLM judge works on 3/4 corpora**: Kendall τ 0.79–0.90 on CUAD/PrivacyQA and
+  0.46–0.76 on MAUD. Its pick is worth ~100–250 labelled queries.
+- **It fails on ContractNLI (τ ≈ 0).** Diagnosis:
+  - 97% of strict-judge positives come from the wrong NDA.
+  - In 34% of ContractNLI queries (39% CUAD, 47% PrivacyQA) the party names in the query appear
+    nowhere in the document text, so the judge cannot tell same-template NDAs apart.
+  - The oracle says reranking hurts on ContractNLI; the judge says it helps.
+- 38–60% of judge positives lie in the right document but outside gold. This points to incomplete
+  gold spans; a manual audit is planned.
+- Consensus is useless. Synthetic questions: style-matched beats naive, both weaker than the judges.
+- PPI++ gives no gain over labels alone; a judge shortlist (top-3/5) helps only for very small n.
+- With 100 labels, P(pick in tie set) is only ~0.65 on ContractNLI and CUAD.
+- **Weak point**: 1000-char chunks win everywhere, and the global-best config has ~0 regret except
+  on ContractNLI (0.083), so the per-corpus selection motivation was weak on this grid.
+
+### 2026-11-17: judge prompt v2 (document opening shown) and budget robustness
+- v2 raises chunk-level AUC (27B ContractNLI 0.86 → 0.93; 3B MAUD 0.76 → 0.92), but selection
+  barely moves (ContractNLI τ −0.05 → 0.12), and 3B on MAUD *drops* (0.72 → −0.08).
+  More evidence that chunk accuracy ≠ selection quality.
+- Conclusions are stable at 2000 / 4000 / 8000-char budgets (judges not run at 8000).
+
+### 2026-11-18: wider grid v2 (70 configs: + 128/2000-char chunks, + MiniLM embedder)
+Oracle at recall@4000c (all 6,889 queries):
+
+| corpus | oracle best | #tied | spread best–worst | regret of one global config |
+|---|---|---|---|---|
+| ContractNLI | 2000 / hybrid / Qwen3 / no rerank (0.251) | 1 | 0.23 | **0.114 (−45% relative)** |
+| CUAD | 1000 / dense / Qwen3 / rerank (0.381) | 2 | 0.33 | 0.027 (−7%) |
+| MAUD | 2000 / dense / Qwen3 / rerank (0.040) | 15 | 0.04 | 0.002 (tied) |
+| PrivacyQA | 2000 / dense / E5 / no rerank (0.507) | 14 | 0.45 | 0.019 (tied) |
+
+- **Per-corpus selection now matters**: the best macro config (2000/dense/E5/rerank) loses 45% of
+  ContractNLI recall and 7% on CUAD. The four corpora pick four different configs, which differ
+  in chunk size, embedder *and* whether to rerank.
+- The global choice also flips with the budget (2000c: 1000-char chunks; 4000c: 2000-char chunks).
+- Labels: ~10 labels already beat the global config on ContractNLI (regret 0.064 < 0.114);
+  CUAD needs ~30. With 100 labels P(pick in tie set) is 0.66 / 0.44 / 0.80 / 1.00.
+- Consensus remains useless (pick never in the tie set; τ ≈ 0.1 on ContractNLI/MAUD).
+- Next: judges + synthetic questions on this grid (`scripts/run_judge_grid_v2.sh`).
+
 ## Next
 1. Full grid finishes → oracle on full LegalBench-RAG; repeat the proxy study (2 judges × 2 modes,
    seeds 0–2, n ∈ {25, 50, 100}).
