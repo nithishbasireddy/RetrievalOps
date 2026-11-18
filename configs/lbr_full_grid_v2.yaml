@@ -1,0 +1,21 @@
+# Wider grid v2 (70 configs): adds 128- and 2000-char chunks and a weak embedder (MiniLM) to v1.
+# LegalBench-RAG (6,889 queries; one shared corpus as in the reference protocol).
+# 5 chunk sizes x {dense, hybrid} x 3 embedders x rerank on/off (60) + 5 x bm25 x rerank on/off (10).
+# Run with scripts/run_grid_v2.sh (shards by chunk size x embedder; reuses the v1 results).
+dataset:
+  name: legalbench_rag
+  path: ../datasets/legalbenchrag
+  sampling: none
+eval_ks: [1, 4, 16, 64]
+output_dir: results
+
+base:
+  chunking: {strategy: recursive, chunk_overlap: 0}
+  top_k: 64
+  candidate_k: 100
+
+grid:
+  chunking.chunk_size: [128, 256, 500, 1000, 2000]
+  retriever: [dense, bm25, hybrid]
+  embedding_model: [intfloat/e5-large-v2, Qwen/Qwen3-Embedding-0.6B, sentence-transformers/all-MiniLM-L6-v2]
+  reranker: [null, BAAI/bge-reranker-v2-m3]
