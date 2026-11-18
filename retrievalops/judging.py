@@ -21,7 +21,6 @@ from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
-PROMPT_VERSION = "v1"
 SYSTEM = "You are an expert legal analyst who annotates search results for relevance."
 TEMPLATE = """Query: {query}
 
@@ -36,6 +35,30 @@ How relevant is the passage to the query?
 0 = the passage is irrelevant, or comes from a different document than the one the query is about
 
 Reply with a single digit: 0, 1 or 2."""
+
+# v2: also shows the opening of the source document (where contracts name their parties), so the
+# judge can tell whether a passage comes from the document the query is about. v1 only showed a
+# file name, and on ContractNLI 97% of v1's strict positives came from the wrong NDA.
+TEMPLATE_V2 = """Query: {query}
+
+The passage below comes from a document that begins like this:
+\"\"\"
+{header}
+\"\"\"
+
+Passage:
+\"\"\"
+{passage}
+\"\"\"
+
+How relevant is the passage to the query?
+2 = the passage contains text that answers the query (fully or in part)
+1 = the passage is on the same topic or the same document but does not contain the answer
+0 = the passage is irrelevant, or comes from a different document than the one the query is about
+    (check the parties / names in the document opening against the query)
+
+Reply with a single digit: 0, 1 or 2."""
+TEMPLATES = {"v1": TEMPLATE, "v2": TEMPLATE_V2}
 
 
 @dataclass(frozen=True)
@@ -72,10 +95,14 @@ class JudgeRequest:
     query: str
     doc: str
     passage: str
+    header: str = ""  # opening of the source document (used by prompt v2)
 
-    def key(self, model: str) -> str:
+    def key(self, model: str, prompt: str = "v1") -> str:
         h = hashlib.sha256()
-        for part in (model, PROMPT_VERSION, self.query, self.doc, self.passage):
+        parts = [model, prompt, self.query, self.doc, self.passage]
+        if prompt != "v1":  # v1 keys stay identical to earlier runs
+            parts.append(self.header)
+        for part in parts:
             h.update(part.encode("utf-8", errors="replace"))
             h.update(b"\x00")
         return h.hexdigest()
@@ -127,6 +154,7 @@ class LLMJudge:
         max_passage_chars: int = 4000,
         concurrency: int = 64,
         disable_thinking: bool = True,
+        prompt: str = "v1",
     ):
         from openai import OpenAI
 
@@ -136,9 +164,13 @@ class LLMJudge:
         self.max_passage_chars = max_passage_chars
         self.concurrency = concurrency
         self.extra_body = {"chat_template_kwargs": {"enable_thinking": False}} if disable_thinking else None
+        if prompt not in TEMPLATES:
+            raise ValueError(f"unknown judge prompt {prompt!r}; choose from {sorted(TEMPLATES)}")
+        self.prompt = prompt
 
     def _call(self, req: JudgeRequest) -> Judgment:
-        content = TEMPLATE.format(query=req.query, doc=req.doc, passage=req.passage[: self.max_passage_chars])
+        content = TEMPLATES[self.prompt].format(
+            query=req.query, doc=req.doc, header=req.header, passage=req.passage[: self.max_passage_chars])
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": content}],
@@ -159,7 +191,7 @@ class LLMJudge:
         return j
 
     def judge(self, requests: Sequence[JudgeRequest], desc: str = "judging") -> list[Judgment]:
-        keys = [r.key(self.model) for r in requests]
+        keys = [r.key(self.model, self.prompt) for r in requests]
         have = self.cache.get_many(list(dict.fromkeys(keys)))
         todo = {k: r for k, r in zip(keys, requests) if k not in have}
         if todo:

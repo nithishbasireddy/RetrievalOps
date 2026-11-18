@@ -23,6 +23,8 @@ import numpy as np
 from retrievalops.metrics import _intersection_len, merge_intervals, truncate_to_budget
 from retrievalops.types import Document, Query, Span
 
+HEADER_CHARS = 400  # document opening shown to the judge by prompt v2
+
 Contexts = dict[str, dict[str, list[Span]]]  # config -> qid -> budget-truncated spans
 
 
@@ -103,7 +105,8 @@ def run_judge(judge, pool: dict[str, set[Span]], queries: dict[str, Query], docs
     items = [(q, s) for q in pool for s in sorted(pool[q], key=lambda x: (x.doc_id, x.start))]
     from retrievalops.judging import JudgeRequest
 
-    reqs = [JudgeRequest(queries[q].text, s.doc_id, docs[s.doc_id].text[s.start : s.end]) for q, s in items]
+    reqs = [JudgeRequest(queries[q].text, s.doc_id, docs[s.doc_id].text[s.start : s.end],
+                         header=" ".join(docs[s.doc_id].text[:HEADER_CHARS].split())) for q, s in items]
     judgments = judge.judge(reqs, desc=desc)
     return {m: {item: j.score(m) for item, j in zip(items, judgments)} for m in modes}
 

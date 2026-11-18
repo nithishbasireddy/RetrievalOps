@@ -64,3 +64,13 @@ def test_strict_vs_graded_relevance():
     assert same_doc_not_answer.score("strict") == 0.0
     with pytest.raises(ValueError):
         same_doc_not_answer.score("other")
+
+
+def test_judge_keys_v1_stable_and_v2_depends_on_header():
+    from retrievalops.judging import JudgeRequest
+
+    a = JudgeRequest("q", "d", "p", header="Agreement between A and B")
+    b = JudgeRequest("q", "d", "p", header="Agreement between C and D")
+    assert a.key("m") == b.key("m")  # v1 ignores the header (cache compatibility)
+    assert a.key("m", "v2") != b.key("m", "v2")
+    assert a.key("m", "v2") != a.key("m")

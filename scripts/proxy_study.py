@@ -55,6 +55,7 @@ def main() -> None:
     ap.add_argument("--judge-model")
     ap.add_argument("--judge-url", default="http://127.0.0.1:8010/v1")
     ap.add_argument("--judge-tag", help="name for this judge in outputs (default: model name)")
+    ap.add_argument("--judge-prompt", default="v1", choices=["v1", "v2"])
     ap.add_argument("--synthetic", nargs="*", default=[], metavar="LABEL=EXPERIMENT_YAML:RUN_NAME",
                     help="finished runs of the same grid on synthetic questions, used as proxies")
     args = ap.parse_args()
@@ -113,8 +114,11 @@ def main() -> None:
     if args.judge_model:
         from retrievalops.judging import LLMJudge
 
-        judge = LLMJudge(args.judge_model, base_url=args.judge_url, cache_path=Path(exp.cache_dir) / "judgments.sqlite")
+        judge = LLMJudge(args.judge_model, base_url=args.judge_url, cache_path=Path(exp.cache_dir) / "judgments.sqlite",
+                         prompt=args.judge_prompt)
     judge_tag = args.judge_tag or (args.judge_model or "").rsplit("/", 1)[-1]
+    if args.judge_prompt != "v1":
+        judge_tag += f"+{args.judge_prompt}"
     curves_by_corpus = {c: g for c, g in pd.concat(curves).groupby("corpus")}
     rows, validity, assisted = [], {}, []
     n_max = max(args.n_unlabelled)
